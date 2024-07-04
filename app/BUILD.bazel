@@ -1,5 +1,6 @@
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application")
 load("@build_bazel_rules_apple//apple:versioning.bzl", "apple_bundle_version")
+load("@build_bazel_rules_apple//apple:apple.bzl", "apple_dynamic_xcframework_import")
 load("@build_bazel_rules_swift//swift:swift.bzl", "swift_library")
 load("//tools:shared.bzl", "app_info", "versions")
 
@@ -12,6 +13,11 @@ apple_bundle_version(
 )
 
 # Code
+filegroup(
+    name = "srcs",
+    srcs = glob(["source/**/*.swift"]),
+    visibility = ["//visibility:public"],
+)
 
 swift_library(
     name = "app.library",
@@ -20,7 +26,13 @@ swift_library(
     module_name = "app",
     deps = [
         "//modules/API:APILib",
+        ":MarketingCloudSDK.xcframework",
     ],
+)
+
+apple_dynamic_xcframework_import(
+    name = "MarketingCloudSDK.xcframework",
+    xcframework_imports = glob(["MarketingCloudSDK.xcframework/**"]),
 )
 
 # Packaging

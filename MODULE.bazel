@@ -10,9 +10,10 @@ bazel_dep(
     version = "1.18.0",
     repo_name = "build_bazel_rules_swift",
 )
+
 bazel_dep(
     name = "rules_apple",
-    version = "3.5.1",
+    version = "3.6.0",
     repo_name = "build_bazel_rules_apple",
 )
 
@@ -24,3 +25,5 @@ bazel_dep(
 
 non_module_dependencies = use_extension("//tools:extensions.bzl", "non_module_dependencies")
 use_repo(non_module_dependencies, "SwiftLint")
+
+

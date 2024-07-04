@@ -1,4 +1,5 @@
 import SwiftUI
+import MarketingCloudSDK
 
 @main
 struct MainApp: App {
