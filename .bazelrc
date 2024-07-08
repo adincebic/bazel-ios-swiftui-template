@@ -1,70 +1,51 @@
-# Enable Bzlmod for every Bazel command
-common --enable_bzlmod
+startup --digest_function=blake3
+common --cache_computed_file_digests=500000
 
-## BUILD
+common --noworker_sandboxing
+common --spawn_strategy=remote,worker,local
 
-build --macos_minimum_os=13
-build --host_macos_minimum_os=13
+# Cache
 
-# https://bazel.build/reference/command-line-reference#flag--incompatible_strict_action_env
-build --incompatible_strict_action_env
+common --disk_cache=~/bazel_disk_cache
+common --experimental_remote_cache_async
+common --jobs=HOST_CPUS*2
+common --remote_cache=grpcs://remote.buildbuddy.io
+common --remote_cache_compression
+common --noremote_upload_local_results
 
-# Disable the worker, which has sandboxing disabled by default, which can hide
-# issues with non-hermetic bugs.
-build --spawn_strategy=sandboxed,local
-build --worker_sandboxing=true
+common --modify_execution_info=^(AppleLipo|BitcodeSymbolsCopy|BundleApp|BundleTreeApp|DsymDwarf|DsymLipo|GenerateAppleSymbolsFile|ObjcBinarySymbolStrip|CppArchive|CppLink|ObjcLink|ProcessAndSign|SignBinary|SwiftArchive|SwiftStdlibCopy)$=+no-remote,^(BundleResources|ImportedDynamicFrameworkProcessor)$=+no-remote-exec
 
-build --incompatible_disallow_empty_glob
+common:upload --disk_cache=
+common:upload --remote_upload_local_results
 
-build --features=swift.use_global_module_cache
+# Cache warming
 
-# Enable indexing while building.
-build --features swift.use_global_index_store
-build --features swift.index_while_building
+common:warming --config=upload
+common:warming --remote_download_minimal
 
-# Since there's no way to set the deployment version for swift_{binary,test},
-# this forces all targets' minimum macOS to Github Actions macOS version.
-build --macos_minimum_os=12.6
+# CI
 
-## TEST
+common:ci --config=upload
 
-# `bazel test` tries to build everything also by default, so skip that so the
-# *_library targets in examples/... aren't built (and fail since they are
-# platform specific).
-test --build_tests_only
+# BES
 
-# Show detailed errors for test failures
-test --test_output=errors
+common --bes_backend=grpcs://remote.buildbuddy.io
+common --bes_results_url=https://app.buildbuddy.io/invocation/
+common --bes_upload_mode=nowait_for_upload_complete
+common --nolegacy_important_outputs
 
-# Use llvm-cov instead of gcov (default).
-coverage --experimental_use_llvm_covmap
+# Remote execution
 
-## REMOTE CACHE
+common --remote_default_exec_properties=OSFamily=darwin
+common --remote_default_exec_properties=Arch=arm64
+common --remote_default_exec_properties=preserve-workspace=true
+common --remote_default_exec_properties=recycle-runner=true
+common --remote_default_exec_properties='clean-workspace-inputs=*'
 
-# Do actions locally when it makes sense.
-build --modify_execution_info=^(BitcodeSymbolsCopy|BundleApp|BundleTreeApp|DsymDwarf|DsymLipo|GenerateAppleSymbolsFile|ObjcBinarySymbolStrip|CppLink|ObjcLink|ProcessAndSign|SignBinary|SwiftArchive|SwiftStdlibCopy)$=+no-remote,^(BundleResources|ImportedDynamicFrameworkProcessor)$=+no-remote-exec
+common:remote --config=upload
+common:remote --remote_executor=grpcs://remote.buildbuddy.io
+common:remote --remote_default_exec_properties=OSFamily=darwin
+common:remote --remote_default_exec_properties=Arch=arm64
 
-build:remote_cache --bes_results_url=https://app.buildbuddy.io/invocation/
-build:remote_cache --bes_backend=grpcs://remote.buildbuddy.io
-build:remote_cache --remote_cache=grpcs://remote.buildbuddy.io
-# https://bazel.build/reference/command-line-reference#flag--remote_download_toplevel
-build:remote_cache --remote_download_toplevel
-# https://bazel.build/reference/command-line-reference#flag--remote_timeout
-build:remote_cache --remote_timeout=3600
-# https://bazel.build/reference/command-line-reference#flag--experimental_remote_cache_compression
-build:remote_cache --experimental_remote_cache_compression
-
-# Only wait for BES upload in CI builds but not dev builds.
-#
-# https://bazel.build/reference/command-line-reference#flag--bes_upload_mode
-build:remote_cache --bes_upload_mode=nowait_for_upload_complete
-build:ci --bes_upload_mode=wait_for_upload_complete
-
-# By default don't upload local results to remote cache, only CI does this.
-build --noremote_upload_local_results
-build:ci --remote_upload_local_results
-
-## LOCAL CONFIG
-
-# Load a user.bazelrc
-try-import %workspace%/user.bazelrc
+# Work around rules_swift_package_manager sandboxing issue
+--strategy_regexp="Compiling Sources/UITextView+Placeholder\.m=sandboxed"
