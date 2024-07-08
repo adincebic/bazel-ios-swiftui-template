@@ -1,0 +1,1 @@
+struct HelloWorld2749 { static func greet() { print("Hello, world2749") } }
