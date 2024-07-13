@@ -16,6 +16,10 @@ apple_bundle_version(
 swift_library(
     name = "app.library",
     srcs = glob(["source/**/*.swift"]),
+    copts = [
+    "-incremental",
+    "-j8",
+    ],
     data = [":PreviewContent"],
     module_name = "app",
     deps = [

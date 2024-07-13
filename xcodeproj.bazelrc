@@ -1,0 +1,2 @@
+build:rules_xcodeproj --features=archive_param_file
+common:xcodeproj --features=-swift.use_global_index_store

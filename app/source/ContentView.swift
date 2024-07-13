@@ -9,6 +9,10 @@ struct ContentView: View {
             Text("iOS application in SwiftUI!")
         }
         .padding()
+        .onAppear {
+            print("View did appear")
+            print("Indeed it did appear")
+        }
     }
 }
 
